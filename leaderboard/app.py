@@ -41,7 +41,7 @@ async def createUser(userId: str, nickname: Optional[str]=None):
     else:
         return {'nickname': user.nickname}
 
-@app.get("/user/", status_code=status.HTTP_200_OK)
+@app.get("/user/")
 async def getUser(userId: str):
     """ Get user information
     """
@@ -52,7 +52,7 @@ async def getUser(userId: str):
                                 detail="User not found")
         return {'id': user.id, 'nickname': user.nickname}
 
-@app.put("/user/", status_code=status.HTTP_200_OK)
+@app.put("/user/")
 async def updateUser(userId: str, nickname: str):
     """ Update user's nickname
     """
@@ -63,7 +63,7 @@ async def updateUser(userId: str, nickname: str):
                                 detail="User not found")
         user.nickname = nickname
 
-@app.delete("/user/", status_code=status.HTTP_200_OK)
+@app.delete("/user/")
 async def deleteUser(userId: str):
     """ Delete user from database
     """
@@ -74,7 +74,7 @@ async def deleteUser(userId: str):
                                 detail="User not found")
         store.delete(user)
 
-@app.get("/leaderboard/top/", status_code=status.HTTP_200_OK)
+@app.get("/leaderboard/top/")
 async def getTopKScores(appId: str, scoreName: str, k: int):
     """ Get top K scores of an app
     """
@@ -85,7 +85,7 @@ async def getTopKScores(appId: str, scoreName: str, k: int):
                     .order_by(Leaderboards.value.desc()) \
                     .limit(k).all()
 
-@app.post("/leaderboard/", status_code=status.HTTP_200_OK)
+@app.post("/leaderboard/")
 async def addScore(appId: str, userId: str, scoreName: str, value: int):
     """ Add user score to leaderboard
     """
