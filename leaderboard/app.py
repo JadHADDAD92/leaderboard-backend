@@ -4,25 +4,25 @@ Leaderboard App
 @author: Jad Haddad <jad.haddad92@gmail.com> 2020
 """
 from datetime import datetime
-from typing import Optional
-
-from sqlalchemy.exc import IntegrityError
+from typing import Optional, List
 
 from fastapi import FastAPI, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 
+from .models import AppModel, UserModel, TopScoresModel
 from .database import Database
 from .database.schema import Apps, Leaderboards, Users
 
 app = FastAPI()
 db = Database()
 
-@app.get("/apps")
+@app.get("/apps", response_model=List[AppModel])
 async def getApps():
     """ Get list of apps
     """
     with db.transaction() as store:
-        apps = store.query(Apps)
-    return apps.all()
+        apps = store.query(Apps.id, Apps.name)
+    return list(map(lambda x: x._asdict(), apps.all()))
 
 @app.post("/user/", status_code=status.HTTP_201_CREATED)
 async def createUser(userId: str, nickname: Optional[str]=None):
@@ -41,8 +41,8 @@ async def createUser(userId: str, nickname: Optional[str]=None):
     else:
         return {'nickname': user.nickname}
 
-@app.get("/user/")
-async def getUser(userId: str):
+@app.get("/user/", response_model=UserModel)
+async def getUser(userId: str, appId: str):
     """ Get user information
     """
     with db.transaction() as store:
@@ -50,7 +50,15 @@ async def getUser(userId: str):
         if user is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail="User not found")
-        return {'id': user.id, 'nickname': user.nickname}
+        appDB = store.query(Apps).get(appId)
+        if appDB is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="App not found")
+        scores = store.query(Leaderboards.scoreName, Leaderboards.value) \
+                      .filter_by(userId=userId, appId=appId) \
+                      .all()
+        scores = list(map(lambda x: x._asdict(), scores))
+        return {'id': user.id, 'nickname': user.nickname, 'scores': scores}
 
 @app.put("/user/")
 async def updateUser(userId: str, nickname: str):
@@ -74,16 +82,17 @@ async def deleteUser(userId: str):
                                 detail="User not found")
         store.delete(user)
 
-@app.get("/leaderboard/top/")
+@app.get("/leaderboard/top/", response_model=List[TopScoresModel])
 async def getTopKScores(appId: str, scoreName: str, k: int):
     """ Get top K scores of an app
     """
     with db.transaction() as store:
-        return store.query(Users.nickname, Leaderboards.value) \
-                    .join(Users).join(Apps) \
-                    .filter(Apps.id == appId, Leaderboards.scoreName == scoreName) \
-                    .order_by(Leaderboards.value.desc()) \
-                    .limit(k).all()
+        topScores = store.query(Users.nickname, Leaderboards.value) \
+                         .join(Users).join(Apps) \
+                         .filter(Apps.id == appId, Leaderboards.scoreName == scoreName) \
+                         .order_by(Leaderboards.value.desc()) \
+                         .limit(k)
+        return list(map(lambda x: x._asdict(), topScores.all()))
 
 @app.post("/leaderboard/")
 async def addScore(appId: str, userId: str, scoreName: str, value: int):
