@@ -6,7 +6,7 @@ Leaderboard App
 from datetime import datetime
 from typing import Optional, List
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Header, Depends
 from sqlalchemy.exc import IntegrityError
 
 from .models import AppModel, UserModel, TopScoresModel
@@ -15,6 +15,20 @@ from .database.schema import Apps, Leaderboards, Users
 
 app = FastAPI()
 db = Database()
+
+def validateUser(userId: str=Header(None)):
+    """ Validate that user exists in DB
+    """
+    if userId is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Unauthorized access")
+    with db.transaction() as store:
+        user = store.query(Users).get(userId)
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="User not found")
+        store.expunge(user)
+    return user
 
 @app.get("/apps", response_model=List[AppModel])
 async def getApps():
@@ -42,47 +56,37 @@ async def createUser(userId: str, nickname: Optional[str]=None):
         return {'nickname': user.nickname}
 
 @app.get("/user/", response_model=UserModel)
-async def getUser(userId: str, appId: str):
+async def getUser(appId: str, user: Users = Depends(validateUser)):
     """ Get user information
     """
     with db.transaction() as store:
-        user = store.query(Users).get(userId)
-        if user is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail="User not found")
         appDB = store.query(Apps).get(appId)
         if appDB is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail="App not found")
         scores = store.query(Leaderboards.scoreName, Leaderboards.value) \
-                      .filter_by(userId=userId, appId=appId) \
+                      .filter_by(userId=user.id, appId=appId) \
                       .all()
         scores = list(map(lambda x: x._asdict(), scores))
         return {'id': user.id, 'nickname': user.nickname, 'scores': scores}
 
 @app.put("/user/")
-async def updateUser(userId: str, nickname: str):
+async def updateUser(nickname: str, user: Users = Depends(validateUser)):
     """ Update user's nickname
     """
     with db.transaction() as store:
-        user = store.query(Users).get(userId)
-        if user is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail="User not found")
         user.nickname = nickname
+        store.merge(user)
 
 @app.delete("/user/")
-async def deleteUser(userId: str):
+async def deleteUser( user: Users = Depends(validateUser)):
     """ Delete user from database
     """
     with db.transaction() as store:
-        user = store.query(Users).get(userId)
-        if user is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail="User not found")
         store.delete(user)
 
-@app.get("/leaderboard/top/", response_model=List[TopScoresModel])
+@app.get("/leaderboard/top/", response_model=List[TopScoresModel],
+         dependencies=[Depends(validateUser)])
 async def getTopKScores(appId: str, scoreName: str, k: int):
     """ Get top K scores of an app
     """
@@ -95,10 +99,11 @@ async def getTopKScores(appId: str, scoreName: str, k: int):
         return list(map(lambda x: x._asdict(), topScores.all()))
 
 @app.post("/leaderboard/")
-async def addScore(appId: str, userId: str, scoreName: str, value: int):
+async def addScore(appId: str, scoreName: str, value: int,
+                   user: Users = Depends(validateUser)):
     """ Add user score to leaderboard
     """
     with db.transaction() as store:
-        leaderboard = Leaderboards(appId=appId, userId=userId, scoreName=scoreName,
+        leaderboard = Leaderboards(appId=appId, userId=user.id, scoreName=scoreName,
                                    value=value)
         store.merge(leaderboard)
