@@ -9,7 +9,7 @@ from typing import Optional, List
 from fastapi import FastAPI, HTTPException, status, Header, Depends
 from sqlalchemy.exc import IntegrityError
 
-from .models import AppModel, UserModel, TopScoresModel
+from .models import UserModel, TopScoresModel
 from .database import Database
 from .database.schema import Apps, Leaderboards, Users
 
@@ -29,14 +29,6 @@ def validateUser(userId: str=Header(None)):
                                 detail="User not found")
         store.expunge(user)
     return user
-
-@app.get("/apps", response_model=List[AppModel])
-async def getApps():
-    """ Get list of apps
-    """
-    with db.transaction() as store:
-        apps = store.query(Apps.id, Apps.name)
-    return list(map(lambda x: x._asdict(), apps.all()))
 
 @app.post("/user/", status_code=status.HTTP_201_CREATED)
 async def createUser(userId: str, nickname: Optional[str]=None):
