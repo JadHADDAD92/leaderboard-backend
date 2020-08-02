@@ -4,14 +4,14 @@ Leaderboard App
 @author: Jad Haddad <jad.haddad92@gmail.com> 2020
 """
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, status, Header, Depends
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
-from .models import UserModel, TopScoresModel
 from .database import Database
 from .database.schema import Apps, Leaderboards, Users
+from .models import TopScoresModel, UserModel
 
 app = FastAPI()
 db = Database()
