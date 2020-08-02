@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from .database import Database
@@ -61,6 +62,36 @@ async def getUser(appId: str, user: Users = Depends(validateUser)):
                       .all()
         scores = list(map(lambda x: x._asdict(), scores))
         return {'id': user.id, 'nickname': user.nickname, 'scores': scores}
+
+@app.get("/user/rank")
+async def getUserRank(appId: str, scoreName, user: Users = Depends(validateUser)):
+    """ Get user rank in percentage in a specific score name
+    """
+    with db.transaction() as store:
+        appDB = store.query(Apps).get(appId)
+        if appDB is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="App not found")
+        
+        scoreNames = store.query(Leaderboards.scoreName) \
+                          .filter_by(appId=appId) \
+                          .distinct()
+        scoreNames = [val for (val, ) in scoreNames]
+        if scoreName not in scoreNames:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="Score name not found")
+        
+        userScore = store.query(Leaderboards.value) \
+                         .filter_by(userId=user.id, appId=appId, scoreName=scoreName)
+        lowerScores = store.query(func.count(Leaderboards.value)) \
+                           .filter(Leaderboards.value < userScore,
+                                   Leaderboards.appId == appId,
+                                   Leaderboards.scoreName == scoreName) \
+                           .scalar()
+        scoresCount = store.query(func.count(Leaderboards.value)) \
+                           .filter_by(appId=appId, scoreName=scoreName) \
+                           .scalar()
+        return (lowerScores * 100) // scoresCount
 
 @app.put("/user/")
 async def updateUser(nickname: str, user: Users = Depends(validateUser)):
