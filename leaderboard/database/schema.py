@@ -22,6 +22,7 @@ class Users(Base):
     __tablename__ = "users"
     
     id = Column(String(30), primary_key=True)
+    token = Column(UUID(True), server_default=text('uuid_generate_v4()'))
     nickname = Column(String(30))
     created = Column(DateTime(True), server_default=func.now())
 
