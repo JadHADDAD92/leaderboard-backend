@@ -32,6 +32,7 @@ class Database(metaclass=Singleton):
         """
         self.engine = create_engine(uri, pool_timeout=0)
     
+    # pylint: disable=no-member
     @contextmanager
     def transaction(self):
         """ execute a SQL transaction
