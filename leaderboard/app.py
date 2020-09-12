@@ -12,26 +12,26 @@ from sqlalchemy.exc import IntegrityError
 
 from .database import Database
 from .database.schema import Apps, Leaderboards, Users
-from .models import TopScoresModel, UserModel
+from .models import TopScoresModel, UserModel, CreateUser
 
 app = FastAPI()
 db = Database()
 
-def validateUser(userId: str=Header(None)):
-    """ Validate that user exists in DB
+def validateUser(userToken: str=Header(None)):
+    """ Validate user token
     """
-    if userId is None:
+    if userToken is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Unauthorized access")
     with db.transaction() as store:
-        user = store.query(Users).get(userId)
+        user = store.query(Users).filter_by(token=userToken).one_or_none()
         if user is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail="User not found")
+                                detail="Invalid token")
         store.expunge(user)
     return user
 
-@app.post("/user/", status_code=status.HTTP_201_CREATED)
+@app.post("/user/", response_model=CreateUser, status_code=status.HTTP_201_CREATED)
 async def createUser(userId: str, nickname: Optional[str]=None):
     """ Create user in database
     """
@@ -46,7 +46,7 @@ async def createUser(userId: str, nickname: Optional[str]=None):
     except IntegrityError:
         raise HTTPException(status_code=401, detail="User already registered")
     else:
-        return {'nickname': user.nickname}
+        return {'nickname': user.nickname, 'token': user.token}
 
 @app.get("/user/", response_model=UserModel)
 async def getUser(appId: str, user: Users = Depends(validateUser)):

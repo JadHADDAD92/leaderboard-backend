@@ -27,6 +27,10 @@ class UserModel(BaseModel):
     nickname: str
     scores: List[ScoreModel]
 
+class CreateUser(BaseModel):
+    """ CreateUser """
+    nickname: str
+    token: str
 
 class TopScoresModel(BaseModel):
     nickname: str
