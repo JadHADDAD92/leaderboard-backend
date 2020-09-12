@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 
 from .database import Database
 from .database.schema import Apps, Leaderboards, Users
-from .models import CreateUser, TopScoresModel, UserModel
+from .models import TopScoresModel, UserModel, UserRank, CreateUser
 
 app = FastAPI()
 db = Database()
@@ -74,7 +74,7 @@ async def getUser(appId: str, userId: str, checksum: str=Header(None)):
         scores = list(map(lambda x: x._asdict(), scores))
         return {'id': userId, 'nickname': user.nickname, 'scores': scores}
 
-@app.get("/user/rank")
+@app.get("/user/rank", response_model=UserRank)
 async def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(None)):
     """ Get user rank in percentage in a specific score name
     """
@@ -103,7 +103,11 @@ async def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Hea
         scoresCount = store.query(func.count(Leaderboards.value)) \
                            .filter_by(appId=appId, scoreName=scoreName) \
                            .scalar()
-        return (lowerScores * 100) // scoresCount
+        
+        return {
+            'percentile': (lowerScores * 100) // (scoresCount - 1),
+            'rank': scoresCount - lowerScores
+        }
 
 @app.put("/user/")
 async def updateUser(nickname: str, userId: str, checksum: str=Header(None)):

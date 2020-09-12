@@ -31,3 +31,8 @@ class UserModel(BaseModel):
 class TopScoresModel(BaseModel):
     nickname: str
     value: int
+
+class UserRank(BaseModel):
+    """ UserRank class """
+    percentile: float
+    rank: int
