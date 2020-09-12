@@ -39,8 +39,11 @@ def populate(numUsers: int, numApps: int, numScoresType: int, reInit: bool):
             store.query(Users).delete()
             store.query(Apps).delete()
         
-        users = [ Users(id=i, nickname=f'user_{i}') for i in range(numUsers) ]
-        apps = [ Apps(name=f'app_{i}') for i in range(numApps) ]
+        users = [ Users(id=i, nickname=f'user_{i}') for i in range(numUsers - 1) ]
+        apps = [ Apps(name=f'app_{i}') for i in range(numApps - 1) ]
+        users.append(Users(id='testid', nickname='testuser'))
+        apps.append(Apps(id='b3edf18d-7856-48ad-bc46-ea65043c97d9', name='testapp'))
+        
         store.bulk_save_objects(apps)
         store.bulk_save_objects(users)
         
