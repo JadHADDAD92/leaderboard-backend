@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 
 from .database import Database
 from .database.schema import Apps, Leaderboards, Users
-from .models import TopScoresModel, UserModel, UserRank, CreateUser
+from .models import TopScoresModel, UserModel, UserRank
 
 app = FastAPI()
 db = Database()
@@ -141,8 +141,8 @@ async def getTopKScores(appId: str, scoreName: str, k: int, checksum: str=Header
                          .limit(k)
         return list(map(lambda x: x._asdict(), topScores.all()))
 
-@app.post("/leaderboard/")
-async def addScore(appId: str, scoreName: str, value: int, userId:int,
+@app.post("/leaderboard/", response_model=UserRank)
+async def addScore(appId: str, scoreName: str, value: int, userId: str,
                    checksum: str=Header(None)):
     """ Add user score to leaderboard
     """
@@ -152,3 +152,6 @@ async def addScore(appId: str, scoreName: str, value: int, userId:int,
         leaderboard = Leaderboards(appId=appId, userId=userId, scoreName=scoreName,
                                    value=value)
         store.merge(leaderboard)
+        
+
+        return getUserRank(appId, scoreName, userId)
