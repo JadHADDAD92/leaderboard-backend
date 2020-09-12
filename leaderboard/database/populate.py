@@ -24,6 +24,16 @@ from .schema import Apps, Leaderboards, Users
 def populate(numUsers: int, numApps: int, numScoresType: int, reInit: bool):
     """ Insert Fake data in database
     """
+    if numUsers == 0:
+        print('The number of users should be greater than 0')
+        return
+    if numApps == 0:
+        print('The number of apps should be greater than 0')
+        return
+    if numScoresType == 0:
+        print('The number of scoreTypes should be greater than 0')
+        return
+    
     with Database().transaction() as store:
         if reInit:
             store.query(Users).delete()
