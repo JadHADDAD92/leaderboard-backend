@@ -153,5 +153,15 @@ async def addScore(appId: str, scoreName: str, value: int, userId: str,
                                    value=value)
         store.merge(leaderboard)
         
-
         return getUserRank(appId, scoreName, userId)
+
+@app.delete("/leaderboard/")
+async def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(None)):
+    """ Delete user score from leaderboard
+    """
+    validateParameters(appId=appId, scoreName=scoreName, userId=userId, checksum=checksum)
+    with db.transaction() as store:
+        score = store.query(Leaderboards) \
+                     .filter_by(appId=appId, userId=userId, scoreName=scoreName) \
+                     .one_or_none()
+        store.delete(score)
