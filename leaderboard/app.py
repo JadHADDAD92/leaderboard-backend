@@ -125,12 +125,16 @@ async def getTopKScores(appId: str, scoreName: str, k: int):
                          .limit(k)
         return list(map(lambda x: x._asdict(), topScores.all()))
 
-@app.post("/leaderboard/")
+@app.post("/leaderboard/", response_model=UserRank)
 async def addScore(appId: str, scoreName: str, value: int,
                    user: Users = Depends(validateUser)):
     """ Add user score to leaderboard
     """
     with db.transaction() as store:
-        leaderboard = Leaderboards(appId=appId, userId=user.id, scoreName=scoreName,
+        userId = user.id
+        leaderboard = Leaderboards(appId=appId, userId=userId, scoreName=scoreName,
                                    value=value)
         store.merge(leaderboard)
+        
+
+        return getUserRank(appId, scoreName, userId)
