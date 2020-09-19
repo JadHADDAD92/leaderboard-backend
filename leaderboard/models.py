@@ -41,3 +41,7 @@ class UserRank(BaseModel):
     """ UserRank class """
     percentile: float
     rank: int
+
+class CreateUser(BaseModel):
+    """ CreateUser """
+    nickname: str

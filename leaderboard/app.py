@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 
 from .database import Database
 from .database.schema import Apps, Leaderboards, Users
-from .models import TopScoresModel, UserModel, UserRank
+from .models import TopScoresModel, UserModel, UserRank, CreateUser
 
 app = FastAPI()
 db = Database()
@@ -38,7 +38,7 @@ def validateParameters(*args, **kwargs):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Unauthorized access: checksum mismatch")
 
-@app.post("/user/", status_code=status.HTTP_201_CREATED)
+@app.post("/user/", response_model=CreateUser, status_code=status.HTTP_201_CREATED)
 async def createUser(userId: str, nickname: Optional[str]=None,
                      checksum: str=Header(None)):
     """ Create user in database
