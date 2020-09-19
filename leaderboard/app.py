@@ -32,7 +32,7 @@ def validateParameters(*args, **kwargs):
         concat += key
         value = kwargs[key]
         if value is not None:
-            concat += kwargs[key]
+            concat += str(kwargs[key])
     concat += environ.get('APP_SECRET')
     if checksum != sha1(concat.encode()).hexdigest():
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
