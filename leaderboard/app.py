@@ -103,10 +103,16 @@ async def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Hea
         scoresCount = store.query(func.count(Leaderboards.value)) \
                            .filter_by(appId=appId, scoreName=scoreName) \
                            .scalar()
+        if scoresCount == 1:
+            percentile = 100
+            rank = 1
+        else:
+            percentile = (lowerScores * 100) // (scoresCount - 1)
+            rank = scoresCount - lowerScores
         
         return {
-            'percentile': (lowerScores * 100) // (scoresCount - 1),
-            'rank': scoresCount - lowerScores
+            'percentile': percentile,
+            'rank': rank
         }
 
 @app.put("/user/")
