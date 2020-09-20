@@ -37,6 +37,12 @@ class TopScoresModel(BaseModel):
     nickname: str
     value: int
 
+class TopScoresResponseModel(BaseModel):
+    """ TopScoresResponseModel class """
+    scores: List[TopScoresModel]
+    userScore: int
+    userRank: int
+
 class UserRank(BaseModel):
     """ UserRank class """
     percentile: float

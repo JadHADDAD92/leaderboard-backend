@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 
 from .database import Database
 from .database.schema import Apps, Leaderboards, Users
-from .models import TopScoresModel, UserModel, UserRank, CreateUser
+from .models import TopScoresResponseModel, UserModel, UserRank, CreateUser
 
 app = FastAPI()
 db = Database()
@@ -137,18 +137,33 @@ async def deleteUser(userId: str, checksum: str=Header(None)):
         user = store.query(Users).get(userId)
         store.delete(user)
 
-@app.get("/leaderboard/top/", response_model=List[TopScoresModel])
-async def getTopKScores(appId: str, scoreName: str, k: int, checksum: str=Header(None)):
+@app.get("/leaderboard/top/", response_model=TopScoresResponseModel)
+async def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
+                        checksum: str=Header(None)):
     """ Get top K scores of an app
     """
-    validateParameters(appId=appId, scoreName=scoreName, k=k, checksum=checksum)
+    validateParameters(appId=appId, userId=userId, scoreName=scoreName, k=k,
+                       checksum=checksum)
     with db.transaction() as store:
         topScores = store.query(Users.nickname, Leaderboards.value) \
                          .join(Users).join(Apps) \
                          .filter(Apps.id == appId, Leaderboards.scoreName == scoreName) \
                          .order_by(Leaderboards.value.desc()) \
                          .limit(k)
-        return list(map(lambda x: x._asdict(), topScores.all()))
+        userScore = store.query(Leaderboards) \
+                         .join(Users).join(Apps) \
+                         .filter(Apps.id == appId, Leaderboards.scoreName == scoreName) \
+                         .filter(Users.id == userId) \
+                         .one()
+        
+        userRankChecksum = computeChecksum(appId=appId, userId=userId,
+                                           scoreName=scoreName)
+        userRank = await getUserRank(appId, scoreName, userId, userRankChecksum)
+        return {
+            'scores': list(map(lambda x: x._asdict(), topScores.all())),
+            'userScore': userScore.value,
+            'userRank': userRank['rank']
+        }
 
 @app.post("/leaderboard/", response_model=UserRank)
 async def addScore(appId: str, scoreName: str, value: int, userId: str,
