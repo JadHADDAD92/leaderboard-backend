@@ -45,7 +45,7 @@ class TopScoresResponseModel(BaseModel):
 
 class UserRank(BaseModel):
     """ UserRank class """
-    percentile: float
+    percentile: int
     rank: int
 
 class CreateUser(BaseModel):
