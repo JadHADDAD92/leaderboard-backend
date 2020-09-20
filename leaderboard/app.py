@@ -154,14 +154,14 @@ async def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
                          .join(Users).join(Apps) \
                          .filter(Apps.id == appId, Leaderboards.scoreName == scoreName) \
                          .filter(Users.id == userId) \
-                         .one()
+                         .one_or_none()
         
         userRankChecksum = computeChecksum(appId=appId, userId=userId,
                                            scoreName=scoreName)
         userRank = await getUserRank(appId, scoreName, userId, userRankChecksum)
         return {
             'scores': list(map(lambda x: x._asdict(), topScores.all())),
-            'userScore': userScore.value,
+            'userScore': userScore.value if userScore is not None else None,
             'userRank': userRank['rank']
         }
 
