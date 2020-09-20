@@ -162,6 +162,7 @@ async def addScore(appId: str, scoreName: str, value: int, userId: str,
                                    value=value)
         store.merge(leaderboard)
         
+        store.commit()
         userRankChecksum = computeChecksum(appId=appId, userId=userId,
                                            scoreName=scoreName)
         return await getUserRank(appId, scoreName, userId, userRankChecksum)
