@@ -47,7 +47,7 @@ async def createUser(userId: str, nickname: Optional[str]=None,
     """ Create user in database
     """
     validateParameters(userId=userId, nickname=nickname, checksum=checksum)
-    if nickname is None:
+    if nickname in ('', None):
         nickname = f"user_{str(datetime.utcnow().timestamp()).split('.')[1]}"
     try:
         with db.transaction() as store:
