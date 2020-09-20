@@ -19,6 +19,16 @@ from .models import TopScoresModel, UserModel, UserRank, CreateUser
 app = FastAPI()
 db = Database()
 
+def computeChecksum(*args, **kwargs):
+    concat = ""
+    for key in sorted(kwargs):
+        concat += key
+        value = kwargs[key]
+        if value is not None:
+            concat += str(kwargs[key])
+    concat += environ.get('APP_SECRET')
+    return sha1(concat.encode()).hexdigest()
+
 def validateParameters(*args, **kwargs):
     """ Validate parameters checksum
     """
@@ -27,14 +37,7 @@ def validateParameters(*args, **kwargs):
     if checksum is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Unauthorized access: no checksum")
-    concat = ""
-    for key in sorted(kwargs):
-        concat += key
-        value = kwargs[key]
-        if value is not None:
-            concat += str(kwargs[key])
-    concat += environ.get('APP_SECRET')
-    if checksum != sha1(concat.encode()).hexdigest():
+    if checksum != computeChecksum(*args, **kwargs):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Unauthorized access: checksum mismatch")
 
@@ -159,7 +162,9 @@ async def addScore(appId: str, scoreName: str, value: int, userId: str,
                                    value=value)
         store.merge(leaderboard)
         
-        return getUserRank(appId, scoreName, userId)
+        userRankChecksum = computeChecksum(appId=appId, userId=userId,
+                                           scoreName=scoreName)
+        return await getUserRank(appId, scoreName, userId, userRankChecksum)
 
 @app.delete("/leaderboard/")
 async def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(None)):
