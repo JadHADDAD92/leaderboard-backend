@@ -6,9 +6,9 @@ Leaderboard App
 from datetime import datetime
 from hashlib import sha1
 from os import environ
-from typing import List, Optional
+from typing import Optional
 
-from fastapi import Depends, FastAPI, Header, HTTPException, status
+from fastapi import FastAPI, Header, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
@@ -19,7 +19,9 @@ from .models import TopScoresResponseModel, UserModel, UserRank, CreateUser
 app = FastAPI()
 db = Database()
 
-def computeChecksum(*args, **kwargs):
+def computeChecksum(*_args, **kwargs):
+    """ Compute checksum for parameters
+    """
     concat = ""
     for key in sorted(kwargs):
         concat += key
@@ -78,7 +80,8 @@ async def getUser(appId: str, userId: str, checksum: str=Header(None)):
         return {'id': userId, 'nickname': user.nickname, 'scores': scores}
 
 @app.get("/user/rank", response_model=UserRank)
-async def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(None)):
+async def getUserRank(appId: str, scoreName: str, userId: str,
+                      checksum: str=Header(None)):
     """ Get user rank in percentage in a specific score name
     """
     validateParameters(appId=appId, scoreName=scoreName, userId=userId, checksum=checksum)
@@ -183,7 +186,8 @@ async def addScore(appId: str, scoreName: str, value: int, userId: str,
         return await getUserRank(appId, scoreName, userId, userRankChecksum)
 
 @app.delete("/leaderboard/")
-async def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(None)):
+async def deleteScore(appId: str, scoreName: str, userId: str,
+                      checksum: str=Header(None)):
     """ Delete user score from leaderboard
     """
     validateParameters(appId=appId, scoreName=scoreName, userId=userId, checksum=checksum)
