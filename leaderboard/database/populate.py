@@ -38,6 +38,7 @@ def populate(numUsers: int, numApps: int, numScoresType: int, reInit: bool):
         if reInit:
             store.query(Users).delete()
             store.query(Apps).delete()
+            store.query(Leaderboards).delete()
         
         users = [ Users(id=i, nickname=f'user_{i}') for i in range(numUsers - 1) ]
         apps = [ Apps(name=f'app_{i}') for i in range(numApps - 1) ]
