@@ -1,0 +1,56 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: checkout to latest commit
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.AWS_PUBLIC_DNS }}
+        username: ubuntu
+        key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
+        script: |
+          cd leaderboard-backend/
+          git fetch origin
+          git reset --hard origin/master
+    - name: build docker images
+      uses: appleboy/ssh-action@master
+      env:
+        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      with:
+        host: ${{ secrets.AWS_PUBLIC_DNS }}
+        username: ubuntu
+        key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
+        envs: POSTGRES_PASSWORD
+        script: |
+          cd leaderboard-backend/
+          touch ./.env
+          echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> ./.env
+          docker-compose down
+          docker-compose build
+    - name: run docker containers
+      uses: appleboy/ssh-action@master
+      env:
+        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        SERVER_TYPE: "production"
+      with:
+        host: ${{ secrets.AWS_PUBLIC_DNS }}
+        username: ubuntu
+        key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
+        envs: POSTGRES_PASSWORD,SERVER_TYPE
+        script: |
+          cd leaderboard-backend/
+          rm -f ./.env
+          touch ./.env
+          echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> ./.env
+          docker-compose config
+          docker-compose up -d
