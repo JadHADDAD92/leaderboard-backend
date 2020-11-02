@@ -162,10 +162,11 @@ async def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
         userRankChecksum = computeChecksum(appId=appId, userId=userId,
                                            scoreName=scoreName)
         userRank = await getUserRank(appId, scoreName, userId, userRankChecksum)
+        rank = userRank['rank']
         return {
             'scores': list(map(lambda x: x._asdict(), topScores.all())),
-            'userScore': userScore.value if userScore is not None else None,
-            'userRank': userRank['rank']
+            'userScore': userScore.value if userScore is not None else 0,
+            'userRank': rank if rank is not None else -1
         }
 
 @app.post("/leaderboard/", response_model=UserRank)
