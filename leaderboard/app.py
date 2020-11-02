@@ -16,7 +16,16 @@ from .database import Database
 from .database.schema import Apps, Leaderboards, Users
 from .models import TopScoresResponseModel, UserModel, UserRank, CreateUser
 
-app = FastAPI()
+production = environ.get('SERVER_TYPE', 'production') == 'production'
+
+if production:
+    docsURL = None
+    redocURL = None
+else:
+    docsURL = "/docs"
+    redocURL = "/redoc"
+
+app = FastAPI(docs_url=docsURL, redoc_url=redocURL)
 db = Database()
 
 def computeChecksum(*_args, **kwargs):
