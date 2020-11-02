@@ -54,7 +54,7 @@ def populate(numUsers: int, numApps: int, numScoresType: int, reInit: bool):
             for scoreName in range(numScoresType):
                 leaderboards.extend(
                     [ Leaderboards(scoreName=f'score{scoreName}', appId=appId,
-                                   userId=user.id, value=randint(0, 100))
+                                   userId=user.id, value=randint(1, 100))
                       for user in users ]
                 )
         store.bulk_save_objects(leaderboards)
