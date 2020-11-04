@@ -11,22 +11,54 @@ services:
     networks:
       - db_nw
     restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
   webapp:
     build:
       context: .
       dockerfile: ./build/web.Dockerfile
-    ports:
-      - "8000:80"
+    volumes:
+      -  type: bind
+         source: /docker-volumes/etc/letsencrypt/live/treederboards.cf
+         target: /etc/letsencrypt/live/treederboards.cf
     environment:
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@db:5432/treederboards
       - APP_MODULE=app.app:app
+      - PORT=5000
+    expose:
+      - 5000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fastapi.rule=Host(`treederboards.cf`)"
+      - "traefik.http.routers.fastapi.tls=true"
+      - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=tr_nw"
+      - "traefik.backend=webapp"
+      - "traefik.port=5000"
+      - "traefik.http.services.webapp.loadbalancer.server.port=5000"
     networks:
       - db_nw
+      - tr_nw
     depends_on:
       - db
     restart: unless-stopped
+  traefik:
+    image: traefik:v2.3.2
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./build/traefik.prod.toml:/etc/traefik/traefik.toml"
+      - "../acme.json:/acme.json"
+    networks:
+      - tr_nw
+    depends_on:
+      - webapp
 networks:
   db_nw:
     driver: bridge
+  tr_nw:
+    external: true
 volumes:
   dbdata:
