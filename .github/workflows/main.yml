@@ -54,5 +54,6 @@ jobs:
           touch ./.env
           echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> ./.env
           echo "APP_SECRET=$APP_SECRET" >> ./.env
+          echo "SERVER_TYPE=$SERVER_TYPE" >> ./.env
           docker-compose config
           docker-compose up -d
