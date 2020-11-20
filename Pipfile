@@ -14,6 +14,7 @@ sqlalchemy = "*"
 uvicorn = "*"
 click = "*"
 alembic = "*"
+aiofiles = "*"
 
 [requires]
 python_version = "3.7"
