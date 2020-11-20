@@ -23,7 +23,7 @@ services:
          target: /etc/letsencrypt/live/treederboards.cf
     environment:
       - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@db:5432/treederboards
-      - APP_MODULE=app.app:app
+      - APP_MODULE=app.main:app
       - APP_SECRET=${APP_SECRET}
       - SERVER_TYPE=${SERVER_TYPE}
       - PORT=5000
