@@ -1,6 +1,5 @@
 FROM tiangolo/uvicorn-gunicorn-fastapi:python3.7
 
-COPY ./app /app/app
 COPY ./requirements.txt /app/requirements.txt
 COPY ./build/prestart.sh /app/prestart.sh
 RUN pip install --upgrade pip
