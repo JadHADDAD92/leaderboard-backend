@@ -29,7 +29,7 @@ else:
 
 app = FastAPI(docs_url=docsURL, redoc_url=redocURL)
 
-def computeChecksum(*_args, **kwargs):
+def computeChecksum(**kwargs):
     """ Compute checksum for parameters
     """
     concat = ""
@@ -41,7 +41,7 @@ def computeChecksum(*_args, **kwargs):
     concat += environ.get('APP_SECRET')
     return sha1(concat.encode()).hexdigest()
 
-def validateParameters(*args, **kwargs):
+def validateParameters(**kwargs):
     """ Validate parameters checksum
     """
     checksum = kwargs.pop('checksum')
@@ -49,7 +49,7 @@ def validateParameters(*args, **kwargs):
     if checksum is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail=NO_CHECKSUM)
-    if checksum != computeChecksum(*args, **kwargs):
+    if checksum != computeChecksum(**kwargs):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail=CHECKSUM_MISMATCH)
 
