@@ -16,7 +16,8 @@ from .database import Database
 from .database.schema import Apps, Leaderboards, Users
 from .models import CreateUser, TopScoresResponseModel, UserModel, UserRank
 from .strings import (APP_NOT_FOUND, CHECKSUM_MISMATCH, NO_CHECKSUM,
-                      SCORENAME_NOT_FOUND, USER_ALREADY_REGISTERED)
+                      SCORENAME_NOT_FOUND, USER_ALREADY_REGISTERED,
+                      USER_NOT_FOUND)
 
 production = environ.get('SERVER_TYPE', 'production') == 'production'
 
@@ -149,7 +150,11 @@ def deleteUser(userId: str, checksum: str=Header(None), db=Depends(Database)):
     validateParameters(userId=userId, checksum=checksum)
     with db.transaction() as store:
         user = store.query(Users).get(userId)
-        store.delete(user)
+        if user is not None:
+            store.delete(user)
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=USER_NOT_FOUND)
 
 @app.get("/leaderboard/top", response_model=TopScoresResponseModel)
 def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
@@ -207,4 +212,8 @@ def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(No
         score = store.query(Leaderboards) \
                      .filter_by(appId=appId, userId=userId, scoreName=scoreName) \
                      .one_or_none()
-        store.delete(score)
+        if score is not None:
+            store.delete(score)
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=SCORENAME_NOT_FOUND)
