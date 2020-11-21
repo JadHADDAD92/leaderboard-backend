@@ -55,8 +55,7 @@ def validateParameters(*args, **kwargs):
                             detail=CHECKSUM_MISMATCH)
 
 @app.post("/user/", response_model=CreateUser, status_code=status.HTTP_201_CREATED)
-async def createUser(userId: str, nickname: Optional[str]=None,
-                     checksum: str=Header(None)):
+def createUser(userId: str, nickname: Optional[str]=None, checksum: str=Header(None)):
     """ Create user in database
     """
     validateParameters(userId=userId, nickname=nickname, checksum=checksum)
@@ -74,7 +73,7 @@ async def createUser(userId: str, nickname: Optional[str]=None,
         return {'nickname': user.nickname}
 
 @app.get("/user/", response_model=UserModel)
-async def getUser(appId: str, userId: str, checksum: str=Header(None)):
+def getUser(appId: str, userId: str, checksum: str=Header(None)):
     """ Get user information
     """
     validateParameters(appId=appId, userId=userId, checksum=checksum)
@@ -91,8 +90,7 @@ async def getUser(appId: str, userId: str, checksum: str=Header(None)):
         return {'id': userId, 'nickname': user.nickname, 'scores': scores}
 
 @app.get("/user/rank", response_model=UserRank)
-async def getUserRank(appId: str, scoreName: str, userId: str,
-                      checksum: str=Header(None)):
+def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(None)):
     """ Get user rank in percentage in a specific score name
     """
     validateParameters(appId=appId, scoreName=scoreName, userId=userId, checksum=checksum)
@@ -133,7 +131,7 @@ async def getUserRank(appId: str, scoreName: str, userId: str,
         }
 
 @app.put("/user/")
-async def updateUser(nickname: str, userId: str, checksum: str=Header(None)):
+def updateUser(nickname: str, userId: str, checksum: str=Header(None)):
     """ Update user's nickname
     """
     validateParameters(userId=userId, nickname=nickname, checksum=checksum)
@@ -143,7 +141,7 @@ async def updateUser(nickname: str, userId: str, checksum: str=Header(None)):
         store.merge(user)
 
 @app.delete("/user/")
-async def deleteUser(userId: str, checksum: str=Header(None)):
+def deleteUser(userId: str, checksum: str=Header(None)):
     """ Delete user from database
     """
     validateParameters(userId=userId, checksum=checksum)
@@ -152,8 +150,8 @@ async def deleteUser(userId: str, checksum: str=Header(None)):
         store.delete(user)
 
 @app.get("/leaderboard/top/", response_model=TopScoresResponseModel)
-async def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
-                        checksum: str=Header(None)):
+def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
+                  checksum: str=Header(None)):
     """ Get top K scores of an app
     """
     validateParameters(appId=appId, userId=userId, scoreName=scoreName, k=k,
@@ -172,7 +170,7 @@ async def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
         
         userRankChecksum = computeChecksum(appId=appId, userId=userId,
                                            scoreName=scoreName)
-        userRank = await getUserRank(appId, scoreName, userId, userRankChecksum)
+        userRank = getUserRank(appId, scoreName, userId, userRankChecksum)
         rank = userRank['rank']
         return {
             'scores': list(map(lambda x: x._asdict(), topScores.all())),
@@ -181,8 +179,8 @@ async def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
         }
 
 @app.post("/leaderboard/", response_model=UserRank)
-async def addScore(appId: str, scoreName: str, value: int, userId: str,
-                   checksum: str=Header(None)):
+def addScore(appId: str, scoreName: str, value: int, userId: str,
+             checksum: str=Header(None)):
     """ Add user score to leaderboard
     """
     validateParameters(appId=appId, scoreName=scoreName, value=value, userId=userId,
@@ -195,11 +193,10 @@ async def addScore(appId: str, scoreName: str, value: int, userId: str,
         store.commit()
         userRankChecksum = computeChecksum(appId=appId, userId=userId,
                                            scoreName=scoreName)
-        return await getUserRank(appId, scoreName, userId, userRankChecksum)
+        return getUserRank(appId, scoreName, userId, userRankChecksum)
 
 @app.delete("/leaderboard/")
-async def deleteScore(appId: str, scoreName: str, userId: str,
-                      checksum: str=Header(None)):
+def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(None)):
     """ Delete user score from leaderboard
     """
     validateParameters(appId=appId, scoreName=scoreName, userId=userId, checksum=checksum)
