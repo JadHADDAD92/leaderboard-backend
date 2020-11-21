@@ -143,18 +143,19 @@ def updateUser(nickname: str, userId: str, checksum: str=Header(None),
         user.nickname = nickname
         store.merge(user)
 
-@app.delete("/user")
-def deleteUser(userId: str, checksum: str=Header(None), db=Depends(Database)):
-    """ Delete user from database
-    """
-    validateParameters(userId=userId, checksum=checksum)
-    with db.transaction() as store:
-        user = store.query(Users).get(userId)
-        if user is not None:
-            store.delete(user)
-        else:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=USER_NOT_FOUND)
+if not production:
+    @app.delete("/user")
+    def deleteUser(userId: str, checksum: str=Header(None), db=Depends(Database)):
+        """ Delete user from database
+        """
+        validateParameters(userId=userId, checksum=checksum)
+        with db.transaction() as store:
+            user = store.query(Users).get(userId)
+            if user is not None:
+                store.delete(user)
+            else:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                    detail=USER_NOT_FOUND)
 
 @app.get("/leaderboard/top", response_model=TopScoresResponseModel)
 def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
@@ -202,18 +203,20 @@ def addScore(appId: str, scoreName: str, value: int, userId: str,
                                            scoreName=scoreName)
         return getUserRank(appId, scoreName, userId, userRankChecksum, db)
 
-@app.delete("/leaderboard")
-def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(None),
-                db=Depends(Database)):
-    """ Delete user score from leaderboard
-    """
-    validateParameters(appId=appId, scoreName=scoreName, userId=userId, checksum=checksum)
-    with db.transaction() as store:
-        score = store.query(Leaderboards) \
-                     .filter_by(appId=appId, userId=userId, scoreName=scoreName) \
-                     .one_or_none()
-        if score is not None:
-            store.delete(score)
-        else:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=SCORENAME_NOT_FOUND)
+if not production:
+    @app.delete("/leaderboard")
+    def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(None),
+                    db=Depends(Database)):
+        """ Delete user score from leaderboard
+        """
+        validateParameters(appId=appId, scoreName=scoreName, userId=userId,
+                           checksum=checksum)
+        with db.transaction() as store:
+            score = store.query(Leaderboards) \
+                        .filter_by(appId=appId, userId=userId, scoreName=scoreName) \
+                        .one_or_none()
+            if score is not None:
+                store.delete(score)
+            else:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                    detail=SCORENAME_NOT_FOUND)
