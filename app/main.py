@@ -8,7 +8,7 @@ from hashlib import sha1
 from os import environ
 from typing import Optional
 
-from fastapi import FastAPI, Header, HTTPException, status
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
@@ -28,7 +28,6 @@ else:
     redocURL = "/redoc"
 
 app = FastAPI(docs_url=docsURL, redoc_url=redocURL)
-db = Database()
 
 def computeChecksum(*_args, **kwargs):
     """ Compute checksum for parameters
@@ -55,7 +54,8 @@ def validateParameters(*args, **kwargs):
                             detail=CHECKSUM_MISMATCH)
 
 @app.post("/user", response_model=CreateUser, status_code=status.HTTP_201_CREATED)
-def createUser(userId: str, nickname: Optional[str]=None, checksum: str=Header(None)):
+def createUser(userId: str, nickname: Optional[str]=None, checksum: str=Header(None),
+               db=Depends(Database)):
     """ Create user in database
     """
     validateParameters(userId=userId, nickname=nickname, checksum=checksum)
@@ -73,7 +73,7 @@ def createUser(userId: str, nickname: Optional[str]=None, checksum: str=Header(N
         return {'nickname': user.nickname}
 
 @app.get("/user", response_model=UserModel)
-def getUser(appId: str, userId: str, checksum: str=Header(None)):
+def getUser(appId: str, userId: str, checksum: str=Header(None), db=Depends(Database)):
     """ Get user information
     """
     validateParameters(appId=appId, userId=userId, checksum=checksum)
@@ -90,7 +90,8 @@ def getUser(appId: str, userId: str, checksum: str=Header(None)):
         return {'id': userId, 'nickname': user.nickname, 'scores': scores}
 
 @app.get("/user/rank", response_model=UserRank)
-def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(None)):
+def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(None),
+                db=Depends(Database)):
     """ Get user rank in percentage in a specific score name
     """
     validateParameters(appId=appId, scoreName=scoreName, userId=userId, checksum=checksum)
@@ -131,7 +132,8 @@ def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(No
         }
 
 @app.put("/user")
-def updateUser(nickname: str, userId: str, checksum: str=Header(None)):
+def updateUser(nickname: str, userId: str, checksum: str=Header(None),
+               db=Depends(Database)):
     """ Update user's nickname
     """
     validateParameters(userId=userId, nickname=nickname, checksum=checksum)
@@ -141,7 +143,7 @@ def updateUser(nickname: str, userId: str, checksum: str=Header(None)):
         store.merge(user)
 
 @app.delete("/user")
-def deleteUser(userId: str, checksum: str=Header(None)):
+def deleteUser(userId: str, checksum: str=Header(None), db=Depends(Database)):
     """ Delete user from database
     """
     validateParameters(userId=userId, checksum=checksum)
@@ -151,7 +153,7 @@ def deleteUser(userId: str, checksum: str=Header(None)):
 
 @app.get("/leaderboard/top", response_model=TopScoresResponseModel)
 def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
-                  checksum: str=Header(None)):
+                  checksum: str=Header(None), db=Depends(Database)):
     """ Get top K scores of an app
     """
     validateParameters(appId=appId, userId=userId, scoreName=scoreName, k=k,
@@ -170,7 +172,7 @@ def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
         
         userRankChecksum = computeChecksum(appId=appId, userId=userId,
                                            scoreName=scoreName)
-        userRank = getUserRank(appId, scoreName, userId, userRankChecksum)
+        userRank = getUserRank(appId, scoreName, userId, userRankChecksum, db)
         rank = userRank['rank']
         return {
             'scores': list(map(lambda x: x._asdict(), topScores.all())),
@@ -180,7 +182,7 @@ def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
 
 @app.post("/leaderboard", response_model=UserRank)
 def addScore(appId: str, scoreName: str, value: int, userId: str,
-             checksum: str=Header(None)):
+             checksum: str=Header(None), db=Depends(Database)):
     """ Add user score to leaderboard
     """
     validateParameters(appId=appId, scoreName=scoreName, value=value, userId=userId,
@@ -193,10 +195,11 @@ def addScore(appId: str, scoreName: str, value: int, userId: str,
         store.commit()
         userRankChecksum = computeChecksum(appId=appId, userId=userId,
                                            scoreName=scoreName)
-        return getUserRank(appId, scoreName, userId, userRankChecksum)
+        return getUserRank(appId, scoreName, userId, userRankChecksum, db)
 
 @app.delete("/leaderboard")
-def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(None)):
+def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(None),
+                db=Depends(Database)):
     """ Delete user score from leaderboard
     """
     validateParameters(appId=appId, scoreName=scoreName, userId=userId, checksum=checksum)

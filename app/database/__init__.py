@@ -24,7 +24,7 @@ class Singleton(type):
         return cls._instance
 
 
-class Database(metaclass=Singleton):
+class Database():
     """ main database object
     """
     def __init__(self, uri=SQLALCHEMY_DATABASE_URL):
