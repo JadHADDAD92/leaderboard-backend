@@ -54,7 +54,8 @@ def validateParameters(**kwargs):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail=CHECKSUM_MISMATCH)
 
-@app.post("/user", response_model=CreateUser, status_code=status.HTTP_201_CREATED)
+@app.post("/user", response_model=CreateUser, status_code=status.HTTP_201_CREATED,
+          tags=['User'])
 def createUser(userId: str, nickname: Optional[str]=None, checksum: str=Header(None),
                db=Depends(Database)):
     """ Create user in database
@@ -73,7 +74,7 @@ def createUser(userId: str, nickname: Optional[str]=None, checksum: str=Header(N
     else:
         return {'nickname': user.nickname}
 
-@app.get("/user", response_model=UserModel)
+@app.get("/user", response_model=UserModel, tags=['User'])
 def getUser(appId: str, userId: str, checksum: str=Header(None), db=Depends(Database)):
     """ Get user information
     """
@@ -90,7 +91,7 @@ def getUser(appId: str, userId: str, checksum: str=Header(None), db=Depends(Data
         scores = list(map(lambda x: x._asdict(), scores))
         return {'id': userId, 'nickname': user.nickname, 'scores': scores}
 
-@app.get("/user/rank", response_model=UserRank)
+@app.get("/user/rank", response_model=UserRank, tags=['Leaderboard'])
 def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(None),
                 db=Depends(Database)):
     """ Get user rank in percentage in a specific score name
@@ -132,7 +133,7 @@ def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(No
             'rank': rank
         }
 
-@app.put("/user")
+@app.put("/user", tags=['User'])
 def updateUser(nickname: str, userId: str, checksum: str=Header(None),
                db=Depends(Database)):
     """ Update user's nickname
@@ -144,7 +145,7 @@ def updateUser(nickname: str, userId: str, checksum: str=Header(None),
         store.merge(user)
 
 if not production:
-    @app.delete("/user")
+    @app.delete("/user", tags=['User'])
     def deleteUser(userId: str, checksum: str=Header(None), db=Depends(Database)):
         """ Delete user from database
         """
@@ -157,7 +158,7 @@ if not production:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                     detail=USER_NOT_FOUND)
 
-@app.get("/leaderboard/top", response_model=TopScoresResponseModel)
+@app.get("/leaderboard/top", response_model=TopScoresResponseModel, tags=['Leaderboard'])
 def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
                   checksum: str=Header(None), db=Depends(Database)):
     """ Get top K scores of an app
@@ -186,7 +187,7 @@ def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
             'userRank': rank if rank is not None else -1
         }
 
-@app.post("/leaderboard", response_model=UserRank)
+@app.post("/leaderboard", response_model=UserRank, tags=['Leaderboard'])
 def addScore(appId: str, scoreName: str, value: int, userId: str,
              checksum: str=Header(None), db=Depends(Database)):
     """ Add user score to leaderboard
@@ -204,7 +205,7 @@ def addScore(appId: str, scoreName: str, value: int, userId: str,
         return getUserRank(appId, scoreName, userId, userRankChecksum, db)
 
 if not production:
-    @app.delete("/leaderboard")
+    @app.delete("/leaderboard", tags=['Leaderboard'])
     def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(None),
                     db=Depends(Database)):
         """ Delete user score from leaderboard
