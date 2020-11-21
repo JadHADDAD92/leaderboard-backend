@@ -91,6 +91,31 @@ def getUser(appId: str, userId: str, checksum: str=Header(None), db=Depends(Data
         scores = list(map(lambda x: x._asdict(), scores))
         return {'id': userId, 'nickname': user.nickname, 'scores': scores}
 
+@app.put("/user", tags=['User'])
+def updateUser(nickname: str, userId: str, checksum: str=Header(None),
+               db=Depends(Database)):
+    """ Update user's nickname
+    """
+    validateParameters(userId=userId, nickname=nickname, checksum=checksum)
+    with db.transaction() as store:
+        user = store.query(Users).get(userId)
+        user.nickname = nickname
+        store.merge(user)
+
+if not production:
+    @app.delete("/user", tags=['User'])
+    def deleteUser(userId: str, checksum: str=Header(None), db=Depends(Database)):
+        """ Delete user from database
+        """
+        validateParameters(userId=userId, checksum=checksum)
+        with db.transaction() as store:
+            user = store.query(Users).get(userId)
+            if user is not None:
+                store.delete(user)
+            else:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                    detail=USER_NOT_FOUND)
+
 @app.get("/user/rank", response_model=UserRank, tags=['Leaderboard'])
 def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(None),
                 db=Depends(Database)):
@@ -132,31 +157,6 @@ def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(No
             'percentile': percentile,
             'rank': rank
         }
-
-@app.put("/user", tags=['User'])
-def updateUser(nickname: str, userId: str, checksum: str=Header(None),
-               db=Depends(Database)):
-    """ Update user's nickname
-    """
-    validateParameters(userId=userId, nickname=nickname, checksum=checksum)
-    with db.transaction() as store:
-        user = store.query(Users).get(userId)
-        user.nickname = nickname
-        store.merge(user)
-
-if not production:
-    @app.delete("/user", tags=['User'])
-    def deleteUser(userId: str, checksum: str=Header(None), db=Depends(Database)):
-        """ Delete user from database
-        """
-        validateParameters(userId=userId, checksum=checksum)
-        with db.transaction() as store:
-            user = store.query(Users).get(userId)
-            if user is not None:
-                store.delete(user)
-            else:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                    detail=USER_NOT_FOUND)
 
 @app.get("/leaderboard/top", response_model=TopScoresResponseModel, tags=['Leaderboard'])
 def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
