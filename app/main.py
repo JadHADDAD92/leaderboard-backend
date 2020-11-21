@@ -15,6 +15,8 @@ from sqlalchemy.exc import IntegrityError
 from .database import Database
 from .database.schema import Apps, Leaderboards, Users
 from .models import CreateUser, TopScoresResponseModel, UserModel, UserRank
+from .strings import (APP_NOT_FOUND, CHECKSUM_MISMATCH, NO_CHECKSUM,
+                      SCORENAME_NOT_FOUND, USER_ALREADY_REGISTERED)
 
 production = environ.get('SERVER_TYPE', 'production') == 'production'
 
@@ -47,10 +49,10 @@ def validateParameters(*args, **kwargs):
     
     if checksum is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Unauthorized access: no checksum")
+                            detail=NO_CHECKSUM)
     if checksum != computeChecksum(*args, **kwargs):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Unauthorized access: checksum mismatch")
+                            detail=CHECKSUM_MISMATCH)
 
 @app.post("/user/", response_model=CreateUser, status_code=status.HTTP_201_CREATED)
 async def createUser(userId: str, nickname: Optional[str]=None,
@@ -67,7 +69,7 @@ async def createUser(userId: str, nickname: Optional[str]=None,
             store.flush()
             store.expunge(user)
     except IntegrityError:
-        raise HTTPException(status_code=401, detail="User already registered")
+        raise HTTPException(status_code=401, detail=USER_ALREADY_REGISTERED)
     else:
         return {'nickname': user.nickname}
 
@@ -80,7 +82,7 @@ async def getUser(appId: str, userId: str, checksum: str=Header(None)):
         appDB = store.query(Apps).get(appId)
         if appDB is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail="App not found")
+                                detail=APP_NOT_FOUND)
         user = store.query(Users).get(userId)
         scores = store.query(Leaderboards.scoreName, Leaderboards.value) \
                       .filter_by(userId=userId, appId=appId) \
@@ -98,7 +100,7 @@ async def getUserRank(appId: str, scoreName: str, userId: str,
         appDB = store.query(Apps).get(appId)
         if appDB is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail="App not found")
+                                detail=APP_NOT_FOUND)
         
         scoreNames = store.query(Leaderboards.scoreName) \
                           .filter_by(appId=appId) \
@@ -106,7 +108,7 @@ async def getUserRank(appId: str, scoreName: str, userId: str,
         scoreNames = [val for (val, ) in scoreNames]
         if scoreName not in scoreNames:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail="Score name not found")
+                                detail=SCORENAME_NOT_FOUND)
         
         userScore = store.query(Leaderboards.value) \
                          .filter_by(userId=userId, appId=appId, scoreName=scoreName)
