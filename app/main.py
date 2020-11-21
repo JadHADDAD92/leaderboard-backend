@@ -54,7 +54,7 @@ def validateParameters(*args, **kwargs):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail=CHECKSUM_MISMATCH)
 
-@app.post("/user/", response_model=CreateUser, status_code=status.HTTP_201_CREATED)
+@app.post("/user", response_model=CreateUser, status_code=status.HTTP_201_CREATED)
 def createUser(userId: str, nickname: Optional[str]=None, checksum: str=Header(None)):
     """ Create user in database
     """
@@ -72,7 +72,7 @@ def createUser(userId: str, nickname: Optional[str]=None, checksum: str=Header(N
     else:
         return {'nickname': user.nickname}
 
-@app.get("/user/", response_model=UserModel)
+@app.get("/user", response_model=UserModel)
 def getUser(appId: str, userId: str, checksum: str=Header(None)):
     """ Get user information
     """
@@ -130,7 +130,7 @@ def getUserRank(appId: str, scoreName: str, userId: str, checksum: str=Header(No
             'rank': rank
         }
 
-@app.put("/user/")
+@app.put("/user")
 def updateUser(nickname: str, userId: str, checksum: str=Header(None)):
     """ Update user's nickname
     """
@@ -140,7 +140,7 @@ def updateUser(nickname: str, userId: str, checksum: str=Header(None)):
         user.nickname = nickname
         store.merge(user)
 
-@app.delete("/user/")
+@app.delete("/user")
 def deleteUser(userId: str, checksum: str=Header(None)):
     """ Delete user from database
     """
@@ -149,7 +149,7 @@ def deleteUser(userId: str, checksum: str=Header(None)):
         user = store.query(Users).get(userId)
         store.delete(user)
 
-@app.get("/leaderboard/top/", response_model=TopScoresResponseModel)
+@app.get("/leaderboard/top", response_model=TopScoresResponseModel)
 def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
                   checksum: str=Header(None)):
     """ Get top K scores of an app
@@ -178,7 +178,7 @@ def getTopKScores(appId: str, userId: str, scoreName: str, k: int,
             'userRank': rank if rank is not None else -1
         }
 
-@app.post("/leaderboard/", response_model=UserRank)
+@app.post("/leaderboard", response_model=UserRank)
 def addScore(appId: str, scoreName: str, value: int, userId: str,
              checksum: str=Header(None)):
     """ Add user score to leaderboard
@@ -195,7 +195,7 @@ def addScore(appId: str, scoreName: str, value: int, userId: str,
                                            scoreName=scoreName)
         return getUserRank(appId, scoreName, userId, userRankChecksum)
 
-@app.delete("/leaderboard/")
+@app.delete("/leaderboard")
 def deleteScore(appId: str, scoreName: str, userId: str, checksum: str=Header(None)):
     """ Delete user score from leaderboard
     """
