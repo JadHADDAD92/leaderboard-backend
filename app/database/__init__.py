@@ -27,7 +27,7 @@ class Singleton(type):
 class Database():
     """ main database object
     """
-    def __init__(self, uri=SQLALCHEMY_DATABASE_URL):
+    def __init__(self, uri: str=SQLALCHEMY_DATABASE_URL):
         """ connect to SQLAlchemy database
         """
         self.engine = create_engine(uri, pool_timeout=0)
