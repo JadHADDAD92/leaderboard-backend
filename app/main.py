@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 
 from .database import Database
 from .database.schema import Apps, Leaderboards, Users
-from .models import TopScoresResponseModel, UserModel, UserRank, CreateUser
+from .models import CreateUser, TopScoresResponseModel, UserModel, UserRank
 
 production = environ.get('SERVER_TYPE', 'production') == 'production'
 
