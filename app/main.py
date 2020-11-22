@@ -84,7 +84,12 @@ def getUser(appId: str, userId: str, checksum: str=Header(None), db=Depends(Data
         if appDB is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=APP_NOT_FOUND)
+        
         user = store.query(Users).get(userId)
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=USER_NOT_FOUND)
+        
         scores = store.query(Leaderboards.scoreName, Leaderboards.value) \
                       .filter_by(userId=userId, appId=appId) \
                       .all()
