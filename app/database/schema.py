@@ -3,7 +3,6 @@ SQLAlchemy Schema module
 
 @author: Jad Haddad <jad.haddad92@gmail.com> 2020
 """
-import click
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -48,26 +47,3 @@ class Leaderboards(Base):
     
     user = relationship(Apps)
     app = relationship(Users)
-
-@click.group()
-def cli():
-    """ CLI function
-    """
-
-@cli.command()
-def create():
-    """ Create tables in database if not existant
-    """
-    engine = Database().engine
-    Base.metadata.create_all(engine)
-
-@cli.command()
-def recreate():
-    """ Drop all tables and create them again
-    """
-    engine = Database().engine
-    Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine)
-
-if __name__ == '__main__':
-    cli()
