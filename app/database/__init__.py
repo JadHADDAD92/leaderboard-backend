@@ -11,17 +11,17 @@ from sqlalchemy.orm import sessionmaker
 
 SQLALCHEMY_DATABASE_URL = os.environ['DATABASE_URL']
 
-class Singleton(type):
-    """ singleton pattern
-    """
-    def __init__(cls, name, bases, dict_):
-        super().__init__(name, bases, dict_)
-        cls._instance = None
-    
-    def __call__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__call__(*args, **kwargs)
-        return cls._instance
+# class Singleton(type):
+#     """ singleton pattern
+#     """
+#     def __init__(cls, name, bases, dict_):
+#         super().__init__(name, bases, dict_)
+#         cls._instance = None
+#    
+#     def __call__(cls, *args, **kwargs):
+#         if cls._instance is None:
+#             cls._instance = super().__call__(*args, **kwargs)
+#         return cls._instance
 
 
 class Database():
