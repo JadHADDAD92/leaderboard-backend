@@ -3,7 +3,7 @@ services:
   db:
     build:
       context: .
-      dockerfile: ./build/db.Dockerfile
+      dockerfile: ./build/db-dev.Dockerfile
     volumes:
       - "dbdata:/var/lib/postgresql/data"
     environment:
