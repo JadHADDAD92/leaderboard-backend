@@ -21,6 +21,7 @@ services:
       - SERVER_TYPE=development
       - PORT=8000
       - MAX_WORKERS=1
+      - APP_SECRET=secretToken
     expose:
       - 8000
     ports:
