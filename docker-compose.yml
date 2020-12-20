@@ -57,6 +57,7 @@ services:
       - tr_nw
     depends_on:
       - webapp
+    restart: unless-stopped
 networks:
   db_nw:
     driver: bridge
