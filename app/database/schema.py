@@ -45,5 +45,5 @@ class Leaderboards(Base):
     value = Column(Integer, nullable=False)
     created = Column(DateTime(True), server_default=func.now())
     
-    user = relationship(Apps)
-    app = relationship(Users)
+    user = relationship(Users)
+    app = relationship(Apps)
