@@ -5,3 +5,18 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  labels:
+    - "python"
+    - "dependencies"
+  assignees:
+    - "JadHADDAD92"
+- package-ecosystem: docker
+  directory: "/build"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+  labels:
+    - "docker"
+    - "dependencies"
+  assignees:
+    - "JadHADDAD92"
